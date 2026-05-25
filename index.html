@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico Avanzado - Yango Market Intelligence</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .chart-container { position: relative; height: 340px; width: 100%; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-950 p-2.5 rounded-xl font-bold shadow-md">
+                    <i class="fa-solid fa-square-poll-horizontal text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v3.6</span></h1>
+                    <p class="text-xs text-slate-400"></p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-end">
+                <div class="flex flex-col min-w-[190px]">
+                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider"><i class="fa-regular fa-calendar-days mr-1 text-amber-500"></i>Período (Mes Año)</label>
+                    <select id="filterMonth" class="bg-slate-800 text-white text-sm rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium">
+                        <option value="ALL">Todos los períodos</option>
+                    </select>
+                </div>
+                <div class="flex flex-col min-w-[160px]">
+                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider"><i class="fa-solid fa-car mr-1 text-amber-500"></i>Gama de Vehículo</label>
+                    <select id="filterVehicle" class="bg-slate-800 text-white text-sm rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium">
+                        <option value="ALL">Todos los vehículos</option>
+                        <option value="Moto">Moto</option>
+                        <option value="Económico">Económico</option>
+                        <option value="Comfort">Comfort</option>
+                    </select>
+                </div>
+                <button id="btnReload" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-sm font-semibold rounded-lg px-4 py-2 transition-all self-end flex items-center gap-2 h-[38px]">
+                    <i class="fa-solid fa-rotate-right"></i> Sincronizar Sheet
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-950/60 backdrop-blur-md z-50 flex flex-col items-center justify-center transition-all duration-300">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 max-w-sm text-center border border-slate-100">
+            <div class="relative flex items-center justify-center">
+                <div class="animate-spin rounded-full h-14 w-14 border-4 border-amber-500 border-t-transparent"></div>
+                <i class="fa-solid fa-database absolute text-amber-600 text-lg"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-lg text-slate-900">Procesando Estructura de Métricas</h3>
+                <p class="text-xs text-slate-500 mt-1">Calculando variaciones exactas y renderizando nuevo orden de componentes.</p>
+            </div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-xs flex items-start gap-3">
+            <i class="fa-solid fa-circle-exclamation text-amber-600 text-xl mt-0.5"></i>
+            <div>
+                <h4 class="font-semibold text-amber-900 text-sm">Filtro Antimalformación Activo (Outliers Excluidos)</h4>
+                <p class="text-xs text-amber-800 mt-0.5">Todos los registros de precios con valores iguales o superiores a <strong>100</strong> se omiten automáticamente de los promedios, porcentajes y gráficas de cálculo por considerarse inputs erróneos. Permanecen intactos en la tabla histórica al final para fines de revisión de bitácora.</p>
+            </div>
+        </div>
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Muestras Filtradas</p>
+                    <h3 id="kpiTotalTrips" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-filter text-slate-400 mr-1"></i>Registros válidos procesados</p>
+                </div>
+                <div class="bg-blue-50 text-blue-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tasa de Renegociación</p>
+                    <h3 id="kpiRenegRate" class="text-3xl font-bold text-slate-900 mt-1">0%</h3>
+                    <p class="text-[11px] text-slate-500 mt-1"><span id="kpiRenegCount" class="font-semibold text-slate-700">0</span> renegociaciones aplicadas</p>
+                </div>
+                <div class="bg-rose-50 text-rose-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
+                    <i class="fa-solid fa-handshake-simple-slash"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tarifa Promedio Yango</p>
+                    <h3 id="kpiAvgYango" class="text-3xl font-bold text-slate-900 mt-1">$0.00</h3>
+                    <p class="text-[11px] text-emerald-600 font-medium mt-1"><i class="fa-solid fa-shield-check mr-1"></i>Depurado (Precios &lt; 100)</p>
+                </div>
+                <div class="bg-amber-50 text-amber-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Más Alto que Competidores</p>
+                    <h3 id="kpiHigherThanComp" class="text-3xl font-bold text-slate-900 mt-1">0%</h3>
+                    <p class="text-[11px] text-slate-500 mt-1">Viajes por encima de Yummy/Ridery</p>
+                </div>
+                <div class="bg-purple-50 text-purple-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
+                    <i class="fa-solid fa-scale-unbalanced-flipped"></i>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 lg:col-span-2 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
+                        <span class="w-1.5 h-4 bg-indigo-500 rounded-sm"></span> Tarifas Medias por Plataforma
+                    </h4>
+                    <div class="chart-container">
+                        <canvas id="chartTariffComparison"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
+                        <span class="w-1.5 h-4 bg-rose-500 rounded-sm"></span> Distribución Global de Eventos
+                    </h4>
+                    <div class="chart-container flex items-center justify-center">
+                        <canvas id="chartRenegotiationPie" style="max-height: 250px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+            <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
+                <span class="w-1.5 h-4 bg-slate-900 rounded-sm"></span> Matriz Consolidada de Desviaciones de Costos por Segmento de Flota
+            </h4>
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-700 uppercase bg-slate-50 font-bold border-b border-slate-200">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">Segmento Flota</th>
+                            <th scope="col" class="px-4 py-3 text-center">Yummy Promedio</th>
+                            <th scope="col" class="px-4 py-3 text-center">Ridery Promedio</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-amber-50/50 text-slate-700">YANGO PROMEDIO GLOBAL</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-rose-50/40 text-slate-900 font-extrabold">YANGO PRE-RENEGOCIACIÓN</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-rose-50/60 text-rose-950 font-extrabold">YANGO RENEGOCIADO</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-slate-100 font-extrabold">Desviación (Post vs Pre)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableCrossMatrix">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+                <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
+                    <span class="w-1.5 h-4 bg-purple-500 rounded-sm"></span> Tasa de Incidencia de Renegociación por Tipo de Vehículo
+                </h4>
+                <div class="chart-container">
+                    <canvas id="chartRenegIncidence"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-1.5 h-4 bg-emerald-500 rounded-sm"></span> Segmentación de Renegociación por Momento y Canal
+                    </h4>
+                    <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase">100% Stacked</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartStackedMethodology"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div>
+                    <h4 class="font-bold text-slate-900 text-lg">Historial Maestro Completo (Bitácora de Campo)</h4>
+                    <p class="text-xs text-slate-500">Muestra detallada de todas las filas. Los montos renegociados vacíos se marcan con un asterisco (*) y toman la tarifa base de Yango en rojo.</p>
+                </div>
+                <span class="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg shadow-2xs border border-slate-200">
+                    Mostrando <span id="lblCountFiltered">0</span> registros filtrados
+                </span>
+            </div>
+            <div class="overflow-x-auto max-h-96 custom-scrollbar border border-slate-100 rounded-xl">
+                <table class="w-full text-xs text-left text-slate-600 relative">
+                    <thead class="text-slate-700 uppercase bg-slate-50 font-bold sticky top-0 shadow-2xs border-b border-slate-200 z-10">
+                        <tr>
+                            <th class="px-4 py-3 bg-slate-50">Fecha / Timestamp</th>
+                            <th class="px-4 py-3 bg-slate-50">Vehículo</th>
+                            <th class="px-4 py-3 bg-slate-50">Ruta Comercial</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Yango ($)</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Yummy ($)</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Ridery ($)</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Monto Negociado</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">¿Hubo Renegociación?</th>
+                            <th class="px-4 py-3 bg-slate-50">Canal / Momento del Evento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="masterTableBody" class="divide-y divide-slate-100">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1RgmSfh7CrYIGdUGmKTznljJzl90f_Fw_5n2W9otxR_0/gviz/tq?tqx=out:csv&gid=794537000";
+
+        let rawDataset = [];
+        let chronologicalPeriods = [];
+
+        let chartTariffInstance = null;
+        let chartRenegPieInstance = null;
+        let chartRenegIncidenceInstance = null;
+        let chartStackedMethodInstance = null;
+
+        const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadGoogleSheetData();
+            document.getElementById("filterMonth").addEventListener("change", applyFiltersAndRefresh);
+            document.getElementById("filterVehicle").addEventListener("change", applyFiltersAndRefresh);
+            document.getElementById("btnReload").addEventListener("click", loadGoogleSheetData);
+        });
+
+        function loadGoogleSheetData() {
+            document.getElementById("loadingOverlay").classList.remove("hidden");
+            
+            Papa.parse(SHEET_CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    processRawData(results.data);
+                    buildChronologicalFilterDropdown();
+                    applyFiltersAndRefresh();
+                    document.getElementById("loadingOverlay").classList.add("hidden");
+                },
+                error: function(err) {
+                    console.error("Error al procesar la hoja de cálculo: ", err);
+                    alert("Error crítico de sincronización con Google Sheets.");
+                    document.getElementById("loadingOverlay").classList.add("hidden");
+                }
+            });
+        }
+
+        function processRawData(data) {
+            let periodSet = new Set();
+            let uniquePeriodsArray = [];
+
+            data.forEach((row) => {
+                let timestampStr = row["Timestamp"] || "";
+                let dateObj = new Date(timestampStr);
+                
+                if (isNaN(dateObj.getTime()) && timestampStr.includes("/")) {
+                    const parts = timestampStr.split(" ")[0].split("/");
+                    if(parts.length === 3) {
+                        dateObj = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                    }
+                }
+
+                if (!isNaN(dateObj.getTime())) {
+                    let year = dateObj.getFullYear();
+                    let monthIndex = dateObj.getMonth();
+                    let periodLabel = `${MONTH_NAMES_ES[monthIndex].toUpperCase()} ${year}`;
+                    
+                    if (!periodSet.has(periodLabel)) {
+                        periodSet.add(periodLabel);
+                        uniquePeriodsArray.push({
+                            label: periodLabel,
+                            year: year,
+                            monthIndex: monthIndex
+                        });
+                    }
+                }
+            });
+
+            uniquePeriodsArray.sort((a, b) => {
+                if (a.year !== b.year) return a.year - b.year;
+                return a.monthIndex - b.monthIndex;
+            });
+            chronologicalPeriods = uniquePeriodsArray;
+
+            rawDataset = data.map((row, index) => {
+                let timestampStr = row["Timestamp"] || "";
+                let dateObj = new Date(timestampStr);
+                
+                if (isNaN(dateObj.getTime()) && timestampStr.includes("/")) {
+                    const parts = timestampStr.split(" ")[0].split("/");
+                    if(parts.length === 3) {
+                        dateObj = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+                    }
+                }
+
+                let periodLabel = "Desconocido";
+                if (!isNaN(dateObj.getTime())) {
+                    periodLabel = `${MONTH_NAMES_ES[dateObj.getMonth()].toUpperCase()} ${dateObj.getFullYear()}`;
+                }
+
+                let vehicle = (row["Tipo de vehículo"] || "").trim();
+                if (vehicle.toLowerCase().includes("moto")) vehicle = "Moto";
+                else if (vehicle.toLowerCase().includes("econ")) vehicle = "Económico";
+                else if (vehicle.toLowerCase().includes("comf")) vehicle = "Comfort";
+                else vehicle = "Económico";
+
+                const parseNum = (val) => {
+                    if (!val) return 0;
+                    let clean = val.toString().replace(/[^0-9.,-]/g, "").replace(",", ".");
+                    let num = parseFloat(clean);
+                    return isNaN(num) ? 0 : num;
+                };
+
+                let yummy = parseNum(row["Precio que te marca en Yummy"]) || 0;
+                let ridery = parseNum(row["Precio que te marca en Ridery"]) || 0;
+                let yango = parseNum(row["Precio que te marca en Yango"]) || 0;
+                let negociado = parseNum(row["Precio Yango final en USD"]) || parseNum(row["Precio final negociado con el conductor en $"]) || 0;
+
+                let isYummyBad = yummy >= 100;
+                let isRideryBad = ridery >= 100;
+                let isYangoBad = yango >= 100;
+                let isNegBad = negociado >= 100;
+
+                let rawTime = (row["¿En qué momento sucedió la renegociación?"] || row["Renegotiation point"] || "").trim();
+                let rTime = "N/A";
+                if (rawTime.toLowerCase().includes("finalizar")) rTime = "Al finalizar el viaje";
+                if (rawTime.toLowerCase().includes("iniciar")) rTime = "Antes de iniciar el viaje";
+
+                let rawChannel = (row["¿Por qué canal sucedió la renegociación?"] || "").trim();
+                let rChannel = "N/A";
+                if (rawChannel.toLowerCase().includes("person") || rawChannel.toLowerCase().includes("persona")) rChannel = "In person";
+                if (rawChannel.toLowerCase().includes("call") || rawChannel.toLowerCase().includes("llamada")) rChannel = "Normal Call";
+
+                return {
+                    id: index + 1,
+                    timestamp: timestampStr,
+                    period: periodLabel,
+                    vehicle: vehicle,
+                    pointA: row["Punto A"] || "N/A",
+                    pointB: row["Punto B"] || "N/A",
+                    driverNegotiated: (row["¿El conductor te negoció el precio?"] || "No").trim(),
+                    renegTime: rTime,
+                    renegChannel: rChannel,
+                    isHigherThanComp: (row["Mas alto que Yummy o Ridery?"] || "No").trim(),
+                    rawYummy: yummy, rawRidery: ridery, rawYango: yango, rawNegociated: negociado,
+                    isYummyBad, isRideryBad, isYangoBad, isNegBad
+                };
+            });
+        }
+
+        function buildChronologicalFilterDropdown() {
+            const select = document.getElementById("filterMonth");
+            select.innerHTML = '<option value="ALL">Todos los períodos</option>';
+            
+            chronologicalPeriods.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.label;
+                opt.textContent = p.label;
+                select.appendChild(opt);
+            });
+        }
+
+        function applyFiltersAndRefresh() {
+            const selectedPeriod = document.getElementById("filterMonth").value;
+            const selectedVehicle = document.getElementById("filterVehicle").value;
+
+            const filteredData = rawDataset.filter(row => {
+                const matchPeriod = (selectedPeriod === "ALL" || row.period === selectedPeriod);
+                const matchVehicle = (selectedVehicle === "ALL" || row.vehicle === selectedVehicle);
+                return matchPeriod && matchVehicle;
+            });
+
+            updateDashboardKPIs(filteredData);
+            renderCrossMatrixTable(filteredData);
+            renderMasterTable(filteredData);
+            renderCharts(filteredData);
+        }
+
+        function updateDashboardKPIs(data) {
+            const total = data.length;
+            document.getElementById("kpiTotalTrips").textContent = total;
+
+            if (total === 0) {
+                document.getElementById("kpiRenegRate").textContent = "0%";
+                document.getElementById("kpiRenegCount").textContent = "0";
+                document.getElementById("kpiAvgYango").textContent = "$0.00";
+                document.getElementById("kpiHigherThanComp").textContent = "0%";
+                return;
+            }
+
+            const renegRows = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
+            const renegCount = renegRows.length;
+            document.getElementById("kpiRenegRate").textContent = `${((renegCount / total) * 100).toFixed(1)}%`;
+            document.getElementById("kpiRenegCount").textContent = renegCount;
+
+            const validYangoRows = data.filter(r => !r.isYangoBad && r.rawYango > 0);
+            if(validYangoRows.length > 0) {
+                const sumYango = validYangoRows.reduce((acc, row) => acc + row.rawYango, 0);
+                document.getElementById("kpiAvgYango").textContent = `$${(sumYango / validYangoRows.length).toFixed(2)}`;
+            } else {
+                document.getElementById("kpiAvgYango").textContent = "$0.00";
+            }
+
+            const higherCount = data.filter(r => r.isHigherThanComp.toLowerCase() === "si" || r.isHigherThanComp.toLowerCase() === "sí").length;
+            document.getElementById("kpiHigherThanComp").textContent = `${((higherCount / total) * 100).toFixed(1)}%`;
+        }
+
+        function renderCrossMatrixTable(data) {
+            const categories = ["Moto", "Económico", "Comfort"];
+            const tbody = document.getElementById("tableCrossMatrix");
+            tbody.innerHTML = "";
+
+            categories.forEach(cat => {
+                const subset = data.filter(r => r.vehicle === cat);
+                if (subset.length === 0) {
+                    tbody.innerHTML += `<tr class="border-b border-slate-100 italic text-slate-400"><td class="px-4 py-3 font-bold text-slate-900">${cat}</td><td colspan="6" class="text-center py-3">Sin muestras registradas</td></tr>`;
+                    return;
+                }
+
+                const vYummy = subset.filter(r => !r.isYummyBad && r.rawYummy > 0).map(r => r.rawYummy);
+                const vRidery = subset.filter(r => !r.isRideryBad && r.rawRidery > 0).map(r => r.rawRidery);
+                const vYangoGlobal = subset.filter(r => !r.isYangoBad && r.rawYango > 0).map(r => r.rawYango);
+                
+                const renegSubset = subset.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
+                const vPreRenegociado = renegSubset.filter(r => !r.isYangoBad && r.rawYango > 0).map(r => r.rawYango);
+                const vRenegociado = renegSubset.filter(r => !r.isNegBad && r.rawNegociated > 0).map(r => r.rawNegociated);
+
+                const getAvgStr = (arr) => arr.length > 0 ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : "0.00";
+
+                let avgYummy = getAvgStr(vYummy);
+                let avgRidery = getAvgStr(vRidery);
+                let avgYangoGlobal = getAvgStr(vYangoGlobal);
+                let avgPreReneg = getAvgStr(vPreRenegociado);
+                let avgReneg = getAvgStr(vRenegociado);
+
+                let displayPreReneg = parseFloat(avgPreReneg) > 0 ? `$${avgPreReneg}` : "-";
+                let displayReneg = parseFloat(avgReneg) > 0 ? `$${avgReneg}` : "-";
+
+                let deviationPercent = 0;
+                if (parseFloat(avgPreReneg) > 0 && parseFloat(avgReneg) > 0) {
+                    deviationPercent = (((parseFloat(avgReneg) - parseFloat(avgPreReneg)) / parseFloat(avgPreReneg)) * 100).toFixed(1);
+                }
+
+                const badge = deviationPercent > 0 
+                    ? `<span class="text-rose-600 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>+${deviationPercent}%</span>`
+                    : (deviationPercent < 0 ? `<span class="text-amber-600 font-bold"><i class="fa-solid fa-arrow-trend-down mr-1"></i>${deviationPercent}%</span>` : `<span class="text-emerald-600 font-medium"><i class="fa-solid fa-circle-check mr-1"></i>0.00%</span>`);
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 font-medium text-slate-700">
+                        <td class="px-4 py-3 font-bold text-slate-900">${cat}</td>
+                        <td class="px-4 py-3 text-center">$${avgYummy}</td>
+                        <td class="px-4 py-3 text-center">$${avgRidery}</td>
+                        <td class="px-4 py-3 text-center bg-amber-50/40 text-slate-600">$${avgYangoGlobal}</td>
+                        <td class="px-4 py-3 text-center bg-rose-50/40 font-bold text-slate-900">${displayPreReneg}</td>
+                        <td class="px-4 py-3 text-center bg-rose-50/60 font-bold text-slate-900">${displayReneg}</td>
+                        <td class="px-4 py-3 text-center text-xs bg-slate-50 font-bold">${badge}</td>
+                    </tr>`;
+            });
+        }
+
+        function renderMasterTable(data) {
+            document.getElementById("lblCountFiltered").textContent = data.length;
+            const tbody = document.getElementById("masterTableBody");
+            tbody.innerHTML = "";
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 italic">No hay registros.</td></tr>`;
+                return;
+            }
+
+            data.forEach(row => {
+                const isNeg = row.driverNegotiated.toLowerCase() === "si" || row.driverNegotiated.toLowerCase() === "sí";
+                
+                const ymAmt = row.rawYummy || 0;
+                const rdAmt = row.rawRidery || 0;
+                const ygAmt = row.rawYango || 0;
+                const ngAmt = row.rawNegociated || 0;
+
+                const yummyDisplay = row.isYummyBad ? `<span class="text-red-500 font-semibold">&ge; 100</span>` : `$${ymAmt.toFixed(2)}`;
+                const rideryDisplay = row.isRideryBad ? `<span class="text-red-500 font-semibold">&ge; 100</span>` : `$${rdAmt.toFixed(2)}`;
+                const yangoDisplay = row.isYangoBad ? `<span class="text-red-500 font-semibold">&ge; 100</span>` : `$${ygAmt.toFixed(2)}`;
+                
+                let negDisplay = "-";
+                let renegClass = "text-slate-400";
+                
+                if (isNeg) {
+                    renegClass = "bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold text-[11px]";
+                    if (row.isNegBad) {
+                        negDisplay = `<span class="text-red-500 font-semibold">&ge; 100</span>`;
+                    } else if (ngAmt > 0) {
+                        negDisplay = `<span class="text-indigo-600 font-bold">$${ngAmt.toFixed(2)}</span>`;
+                    } else {
+                        negDisplay = `<span class="text-red-500 font-black">$${ygAmt.toFixed(2)} *</span>`;
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 text-slate-700">
+                        <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${row.timestamp} <span class="text-[10px] ml-1 uppercase font-semibold text-slate-400">(${row.period})</span></td>
+                        <td class="px-4 py-2.5 font-bold text-slate-900">${row.vehicle}</td>
+                        <td class="px-4 py-2.5 truncate max-w-xs font-medium">${row.pointA} &rarr; ${row.pointB}</td>
+                        <td class="px-4 py-2.5 text-center font-bold text-amber-600">${yangoDisplay}</td>
+                        <td class="px-4 py-2.5 text-center">${yummyDisplay}</td>
+                        <td class="px-4 py-2.5 text-center">${rideryDisplay}</td>
+                        <td class="px-4 py-2.5 text-center font-bold">${negDisplay}</td>
+                        <td class="px-4 py-2.5 text-center"><span class="${renegClass}">${isNeg ? 'SÍ' : 'No'}</span></td>
+                        <td class="px-4 py-2.5 text-slate-500 text-xs truncate max-w-xs">${isNeg ? `${row.renegTime} (${row.renegChannel})` : 'N/A'}</td>
+                    </tr>`;
+            });
+        }
+
+        function renderCharts(data) {
+            const categories = ["Comfort", "Económico", "Moto"];
+            
+            const metrics = categories.map(cat => {
+                const sub = data.filter(r => r.vehicle === cat);
+                const subNeg = sub.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
+                
+                const validYango = sub.filter(r => !r.isYangoBad && r.rawYango > 0).map(r => r.rawYango);
+                const validYummy = sub.filter(r => !r.isYummyBad && r.rawYummy > 0).map(r => r.rawYummy);
+                const validRidery = sub.filter(r => !r.isRideryBad && r.rawRidery > 0).map(r => r.rawRidery);
+                
+                const validPreReneg = subNeg.filter(r => !r.isYangoBad && r.rawYango > 0).map(r => r.rawYango);
+                const validRenegociado = subNeg.filter(r => !r.isNegBad && r.rawNegociated > 0).map(r => r.rawNegociated);
+
+                const getMean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+
+                let avgPre = getMean(validPreReneg);
+                let avgPost = getMean(validRenegociado);
+                
+                // Tamaño calculado estrictamente por el incremento neto (Diferencia)
+                let deltaIncremento = avgPost > avgPre ? (avgPost - avgPre) : 0;
+
+                return {
+                    yango: getMean(validYango),
+                    yummy: getMean(validYummy),
+                    ridery: getMean(validRidery),
+                    preReneg: avgPre,
+                    incrementoReneg: deltaIncremento,
+                    avgPostReal: avgPost, 
+                    renegRate: sub.length ? (subNeg.length / sub.length) * 100 : 0
+                };
+            });
+
+            // 1. COMPARATIVA DE TARIFAS CON CONFIGURACIÓN APILADA MIXTA AJUSTADA
+            if (chartTariffInstance) chartTariffInstance.destroy();
+            chartTariffInstance = new Chart(document.getElementById("chartTariffComparison").getContext("2d"), {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: [
+                        { label: 'Yummy', data: metrics.map(m => m.yummy.toFixed(2)), backgroundColor: '#c084fc', stack: 'Stack0' },
+                        { label: 'Ridery', data: metrics.map(m => m.ridery.toFixed(2)), backgroundColor: '#60a5fa', stack: 'Stack1' },
+                        { label: 'Yango Promedio Global', data: metrics.map(m => m.yango.toFixed(2)), backgroundColor: '#fbbf24', stack: 'Stack2' },
+                        { label: 'Yango Pre-Renegociación', data: metrics.map(m => m.preReneg.toFixed(2)), backgroundColor: '#991b1b', stack: 'Stack3' },
+                        { label: 'Yango Renegociado (Incremento)', data: metrics.map(m => m.incrementoReneg.toFixed(2)), backgroundColor: '#f87171', stack: 'Stack3' }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: false }, 
+                        y: { 
+                            beginAtZero: true,
+                            title: { display: true, text: 'Tarifa en USD ($)' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let datasetLabel = context.dataset.label || '';
+                                    let index = context.dataIndex;
+                                    let value = context.raw;
+                                    if (datasetLabel.includes("Incremento")) {
+                                        return `${datasetLabel}: +$${value} (Total Final: $${metrics[index].avgPostReal.toFixed(2)})`;
+                                    }
+                                    return `${datasetLabel}: $${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. TORTA GLOBAL
+            const totalNeg = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí").length;
+            if (chartRenegPieInstance) chartRenegPieInstance.destroy();
+            chartRenegPieInstance = new Chart(document.getElementById("chartRenegotiationPie").getContext("2d"), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Sí renegoció', 'No renegoció'],
+                    datasets: [{ data: [totalNeg, data.length - totalNeg], backgroundColor: ['#f43f5e', '#34d399'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // 3. INCIDENCIA POR VEHÍCULO
+            if (chartRenegIncidenceInstance) chartRenegIncidenceInstance.destroy();
+            chartRenegIncidenceInstance = new Chart(document.getElementById("chartRenegIncidence").getContext("2d"), {
+                type: 'bar',
+                data: {
+                    labels: categories,
+                    datasets: [{ label: '% Incidencia de Ajuste', data: metrics.map(m => m.renegRate.toFixed(1)), backgroundColor: '#f472b6', borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, beginAtZero: true } } }
+            });
+
+            // 4. GRÁFICA DE BARRAS APILADAS AL 100%
+            const renegDataset = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
+            const momentosLabels = ["Al finalizar el viaje", "Antes de iniciar el viaje", "Grand Total"];
+            
+            const calcPercent = (momento, canal, esTotalColumna = false) => {
+                if (esTotalColumna) {
+                    const totalGeneral = renegDataset.length;
+                    if (totalGeneral === 0) return 0;
+                    const count = renegDataset.filter(r => r.renegChannel === canal).length;
+                    return (count / totalGeneral) * 100;
+                } else {
+                    const totalMomento = renegDataset.filter(r => r.renegTime === momento).length;
+                    if (totalMomento === 0) return 0;
+                    const count = renegDataset.filter(r => r.renegTime === momento && r.renegChannel === canal).length;
+                    return (count / totalMomento) * 100;
+                }
+            };
+
+            const datasetInPerson = [calcPercent("Al finalizar el viaje", "In person"), calcPercent("Antes de iniciar el viaje", "In person"), calcPercent("", "In person", true)];
+            const datasetNormalCall = [calcPercent("Al finalizar el viaje", "Normal Call"), calcPercent("Antes de iniciar el viaje", "Normal Call"), calcPercent("", "Normal Call", true)];
+            const datasetGrandTotalBlock = [100 - datasetInPerson[0] - datasetNormalCall[0], 100 - datasetInPerson[1] - datasetNormalCall[1], 100 - datasetInPerson[2] - datasetNormalCall[2]];
+
+            if (chartStackedMethodInstance) chartStackedMethodInstance.destroy();
+            chartStackedMethodInstance = new Chart(document.getElementById("chartStackedMethodology").getContext("2d"), {
+                type: 'bar',
+                data: {
+                    labels: momentosLabels,
+                    datasets: [
+                        { label: 'In person', data: datasetInPerson.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#4285F4' },
+                        { label: 'Normal Call', data: datasetNormalCall.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#FBBC05' },
+                        { label: 'Grand Total (Control)', data: datasetGrandTotalBlock.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#34A853' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, max: 200, ticks: { callback: function(value) { if(value <= 100) return value + "%"; return ""; } } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.raw + '%'; } } }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
