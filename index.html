@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Analítico Avanzado - Yango Market Intelligence</title>
+    <title>Advanced Analytical Dashboard - Yango Market Intelligence</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -12,6 +12,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .chart-container { position: relative; height: 340px; width: 100%; }
+        .chart-container-historical { position: relative; height: 280px; width: 100%; }
+        /* Custom scrollbar matching professional layout */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -26,29 +28,29 @@
                     <i class="fa-solid fa-square-poll-horizontal text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v3.6</span></h1>
-                    <p class="text-xs text-slate-400"></p>
+                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v5.4</span></h1>
+                    <p class="text-xs text-slate-400">Strategic Performance Tracker</p>
                 </div>
             </div>
             
             <div class="flex flex-wrap items-center gap-4 w-full lg:w-auto justify-end">
                 <div class="flex flex-col min-w-[190px]">
-                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider"><i class="fa-regular fa-calendar-days mr-1 text-amber-500"></i>Período (Mes Año)</label>
+                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider"><i class="fa-regular fa-calendar-days mr-1 text-amber-500"></i>Period (Month Year)</label>
                     <select id="filterMonth" class="bg-slate-800 text-white text-sm rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium">
-                        <option value="ALL">Todos los períodos</option>
+                        <option value="ALL">All Periods</option>
                     </select>
                 </div>
                 <div class="flex flex-col min-w-[160px]">
-                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider"><i class="fa-solid fa-car mr-1 text-amber-500"></i>Gama de Vehículo</label>
+                    <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider"><i class="fa-solid fa-car mr-1 text-amber-500"></i>Vehicle Tier</label>
                     <select id="filterVehicle" class="bg-slate-800 text-white text-sm rounded-lg px-3 py-2 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-medium">
-                        <option value="ALL">Todos los vehículos</option>
+                        <option value="ALL">All Vehicles</option>
                         <option value="Moto">Moto</option>
-                        <option value="Económico">Económico</option>
+                        <option value="Economy">Economy</option>
                         <option value="Comfort">Comfort</option>
                     </select>
                 </div>
                 <button id="btnReload" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-sm font-semibold rounded-lg px-4 py-2 transition-all self-end flex items-center gap-2 h-[38px]">
-                    <i class="fa-solid fa-rotate-right"></i> Sincronizar Sheet
+                    <i class="fa-solid fa-rotate-right"></i> Sync Sheet
                 </button>
             </div>
         </div>
@@ -61,28 +63,20 @@
                 <i class="fa-solid fa-database absolute text-amber-600 text-lg"></i>
             </div>
             <div>
-                <h3 class="font-bold text-lg text-slate-900">Procesando Estructura de Métricas</h3>
-                <p class="text-xs text-slate-500 mt-1">Calculando variaciones exactas y renderizando nuevo orden de componentes.</p>
+                <h3 class="font-bold text-lg text-slate-900">Processing Metric Architecture</h3>
+                <p class="text-xs text-slate-500 mt-1">Calculating dynamic variances and layout assets...</p>
             </div>
         </div>
     </div>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-xs flex items-start gap-3">
-            <i class="fa-solid fa-circle-exclamation text-amber-600 text-xl mt-0.5"></i>
-            <div>
-                <h4 class="font-semibold text-amber-900 text-sm">Filtro Antimalformación Activo (Outliers Excluidos)</h4>
-                <p class="text-xs text-amber-800 mt-0.5">Todos los registros de precios con valores iguales o superiores a <strong>100</strong> se omiten automáticamente de los promedios, porcentajes y gráficas de cálculo por considerarse inputs erróneos. Permanecen intactos en la tabla histórica al final para fines de revisión de bitácora.</p>
-            </div>
-        </div>
-
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Muestras Filtradas</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Filtered Samples</p>
                     <h3 id="kpiTotalTrips" class="text-3xl font-bold text-slate-900 mt-1">0</h3>
-                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-filter text-slate-400 mr-1"></i>Registros válidos procesados</p>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-filter text-slate-400 mr-1"></i>Valid entries processed</p>
                 </div>
                 <div class="bg-blue-50 text-blue-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
                     <i class="fa-solid fa-chart-pie"></i>
@@ -90,9 +84,9 @@
             </div>
             <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tasa de Renegociación</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Renegotiation Rate</p>
                     <h3 id="kpiRenegRate" class="text-3xl font-bold text-slate-900 mt-1">0%</h3>
-                    <p class="text-[11px] text-slate-500 mt-1"><span id="kpiRenegCount" class="font-semibold text-slate-700">0</span> renegociaciones aplicadas</p>
+                    <p class="text-[11px] text-slate-500 mt-1"><span id="kpiRenegCount" class="font-semibold text-slate-700">0</span> corrections applied</p>
                 </div>
                 <div class="bg-rose-50 text-rose-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
                     <i class="fa-solid fa-handshake-simple-slash"></i>
@@ -100,9 +94,9 @@
             </div>
             <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tarifa Promedio Yango</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Yango Average Fare</p>
                     <h3 id="kpiAvgYango" class="text-3xl font-bold text-slate-900 mt-1">$0.00</h3>
-                    <p class="text-[11px] text-emerald-600 font-medium mt-1"><i class="fa-solid fa-shield-check mr-1"></i>Depurado (Precios &lt; 100)</p>
+                    <p class="text-[11px] text-emerald-600 font-medium mt-1"><i class="fa-solid fa-shield-check mr-1"></i>Filtered (Fares &lt; 100)</p>
                 </div>
                 <div class="bg-amber-50 text-amber-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
                     <i class="fa-solid fa-hand-holding-dollar"></i>
@@ -110,12 +104,40 @@
             </div>
             <div class="bg-white rounded-2xl p-5 shadow-xs border border-slate-200 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Más Alto que Competidores</p>
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Higher Than Competitors</p>
                     <h3 id="kpiHigherThanComp" class="text-3xl font-bold text-slate-900 mt-1">0%</h3>
-                    <p class="text-[11px] text-slate-500 mt-1">Viajes por encima de Yummy/Ridery</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Trips above Yummy/Ridery</p>
                 </div>
                 <div class="bg-purple-50 text-purple-600 h-11 w-11 rounded-xl flex items-center justify-center text-lg shadow-xs">
                     <i class="fa-solid fa-scale-unbalanced-flipped"></i>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-4 mb-6 gap-2">
+                <div>
+                    <h4 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+                        <span class="w-1.5 h-4 bg-amber-500 rounded-sm"></span> Historical Performance Logs & Tracking Trends
+                    </h4>
+                    <p class="text-xs text-slate-500">Dynamic multi-month trend lines computed directly from Google Sheets entries (Immune to single filter selections to preserve full history)</p>
+                </div>
+                <div id="sharedHistoricalLegend" class="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                    <h5 class="text-sm font-bold text-slate-800 mb-3 text-center lg:text-left">% of Renegotiated Trips per Month (Milestone)</h5>
+                    <div class="chart-container-historical">
+                        <canvas id="chartHistRenegRate"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h5 class="text-sm font-bold text-slate-800 mb-3 text-center lg:text-left">% Price Deviation (Post vs Pre-Renegotiation)</h5>
+                    <div class="chart-container-historical">
+                        <canvas id="chartHistPriceIncrease"></canvas>
+                    </div>
                 </div>
             </div>
         </section>
@@ -124,7 +146,7 @@
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 lg:col-span-2 flex flex-col justify-between">
                 <div>
                     <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
-                        <span class="w-1.5 h-4 bg-indigo-500 rounded-sm"></span> Tarifas Medias por Plataforma
+                        <span class="w-1.5 h-4 bg-indigo-500 rounded-sm"></span> Average Fares by Platform
                     </h4>
                     <div class="chart-container">
                         <canvas id="chartTariffComparison"></canvas>
@@ -135,7 +157,7 @@
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 flex flex-col justify-between">
                 <div>
                     <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
-                        <span class="w-1.5 h-4 bg-rose-500 rounded-sm"></span> Distribución Global de Eventos
+                        <span class="w-1.5 h-4 bg-rose-500 rounded-sm"></span> Global Event Distribution
                     </h4>
                     <div class="chart-container flex items-center justify-center">
                         <canvas id="chartRenegotiationPie" style="max-height: 250px;"></canvas>
@@ -146,23 +168,23 @@
 
         <section class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
             <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
-                <span class="w-1.5 h-4 bg-slate-900 rounded-sm"></span> Matriz Consolidada de Desviaciones de Costos por Segmento de Flota
+                <span class="w-1.5 h-4 bg-slate-900 rounded-sm"></span> Consolidated Matrix of Cost Deviations by Fleet Segment
             </h4>
             <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-sm text-left text-slate-600">
                     <thead class="text-xs text-slate-700 uppercase bg-slate-50 font-bold border-b border-slate-200">
                         <tr>
-                            <th scope="col" class="px-4 py-3">Segmento Flota</th>
-                            <th scope="col" class="px-4 py-3 text-center">Yummy Promedio</th>
-                            <th scope="col" class="px-4 py-3 text-center">Ridery Promedio</th>
-                            <th scope="col" class="px-4 py-3 text-center bg-amber-50/50 text-slate-700">YANGO PROMEDIO GLOBAL</th>
-                            <th scope="col" class="px-4 py-3 text-center bg-rose-50/40 text-slate-900 font-extrabold">YANGO PRE-RENEGOCIACIÓN</th>
-                            <th scope="col" class="px-4 py-3 text-center bg-rose-50/60 text-rose-950 font-extrabold">YANGO RENEGOCIADO</th>
-                            <th scope="col" class="px-4 py-3 text-center bg-slate-100 font-extrabold">Desviación (Post vs Pre)</th>
+                            <th scope="col" class="px-4 py-3">Fleet Segment</th>
+                            <th scope="col" class="px-4 py-3 text-center" style="color: #c084fc;">Yummy Average</th>
+                            <th scope="col" class="px-4 py-3 text-center" style="color: #34d399;">Ridery Average</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-amber-50/50" style="color: #CD212A;">YANGO AVERAGE</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-rose-50/40 text-slate-900 font-extrabold">YANGO PRE-RENEGOTIATION</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-rose-50/60 text-slate-900 font-extrabold">YANGO RENEGOTIATED</th>
+                            <th scope="col" class="px-4 py-3 text-center bg-slate-100 font-extrabold">Deviation (Post vs Pre)</th>
                         </tr>
                     </thead>
                     <tbody id="tableCrossMatrix">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </section>
@@ -170,22 +192,19 @@
         <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
                 <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
-                    <span class="w-1.5 h-4 bg-purple-500 rounded-sm"></span> Tasa de Incidencia de Renegociación por Tipo de Vehículo
+                    <span class="w-1.5 h-4 bg-amber-500 rounded-sm"></span> Renegotiated Trips Higher Than Competitors
                 </h4>
                 <div class="chart-container">
-                    <canvas id="chartRenegIncidence"></canvas>
+                    <canvas id="chartRenegHigherThanComp"></canvas>
                 </div>
             </div>
 
             <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="font-bold text-slate-900 flex items-center gap-2">
-                        <span class="w-1.5 h-4 bg-emerald-500 rounded-sm"></span> Segmentación de Renegociación por Momento y Canal
-                    </h4>
-                    <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase">100% Stacked</span>
-                </div>
+                <h4 class="font-bold text-slate-900 flex items-center gap-2 mb-4">
+                    <span class="w-1.5 h-4 bg-purple-500 rounded-sm"></span> Renegotiation Incidence Rate by Vehicle Type
+                </h4>
                 <div class="chart-container">
-                    <canvas id="chartStackedMethodology"></canvas>
+                    <canvas id="chartRenegIncidence"></canvas>
                 </div>
             </div>
         </section>
@@ -193,30 +212,31 @@
         <section class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <div>
-                    <h4 class="font-bold text-slate-900 text-lg">Historial Maestro Completo (Bitácora de Campo)</h4>
-                    <p class="text-xs text-slate-500">Muestra detallada de todas las filas. Los montos renegociados vacíos se marcan con un asterisco (*) y toman la tarifa base de Yango en rojo.</p>
+                    <h4 class="font-bold text-slate-900 text-lg">Master Logs History (Field Records)</h4>
+                    <p class="text-xs text-slate-500">Comprehensive table review. Empty renegotiated amounts are designated with an asterisk (*) and match Yango base prices in red text color.</p>
                 </div>
                 <span class="text-xs font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg shadow-2xs border border-slate-200">
-                    Mostrando <span id="lblCountFiltered">0</span> registros filtrados
+                    Showing <span id="lblCountFiltered">0</span> filtered rows
                 </span>
             </div>
             <div class="overflow-x-auto max-h-96 custom-scrollbar border border-slate-100 rounded-xl">
                 <table class="w-full text-xs text-left text-slate-600 relative">
                     <thead class="text-slate-700 uppercase bg-slate-50 font-bold sticky top-0 shadow-2xs border-b border-slate-200 z-10">
                         <tr>
-                            <th class="px-4 py-3 bg-slate-50">Fecha / Timestamp</th>
-                            <th class="px-4 py-3 bg-slate-50">Vehículo</th>
-                            <th class="px-4 py-3 bg-slate-50">Ruta Comercial</th>
+                            <th class="px-4 py-3 bg-slate-50">Date / Timestamp</th>
+                            <th class="px-4 py-3 bg-slate-50">Vehicle</th>
+                            <th class="px-4 py-3 bg-slate-50">Commercial Route</th>
                             <th class="px-4 py-3 bg-slate-50 text-center">Yango ($)</th>
                             <th class="px-4 py-3 bg-slate-50 text-center">Yummy ($)</th>
                             <th class="px-4 py-3 bg-slate-50 text-center">Ridery ($)</th>
-                            <th class="px-4 py-3 bg-slate-50 text-center">Monto Negociado</th>
-                            <th class="px-4 py-3 bg-slate-50 text-center">¿Hubo Renegociación?</th>
-                            <th class="px-4 py-3 bg-slate-50">Canal / Momento del Evento</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Higher than Comp?</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Negotiated Sum</th>
+                            <th class="px-4 py-3 bg-slate-50 text-center">Renegotiated?</th>
+                            <th class="px-4 py-3 bg-slate-50">Channel / Timing of Event</th>
                         </tr>
                     </thead>
                     <tbody id="masterTableBody" class="divide-y divide-slate-100">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </section>
@@ -226,14 +246,17 @@
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1RgmSfh7CrYIGdUGmKTznljJzl90f_Fw_5n2W9otxR_0/gviz/tq?tqx=out:csv&gid=794537000";
 
         let rawDataset = [];
-        let chronologicalPeriods = [];
+        let chronologicalPeriods = []; 
 
         let chartTariffInstance = null;
         let chartRenegPieInstance = null;
         let chartRenegIncidenceInstance = null;
-        let chartStackedMethodInstance = null;
+        let chartRenegHigherThanCompInstance = null;
+        
+        let chartHistRenegRateInstance = null;
+        let chartHistPriceIncreaseInstance = null;
 
-        const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const COLOR_PALETTE_MONTHS = ['#991b1b', '#ef4444', '#fca5a5', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b', '#111827'];
 
         document.addEventListener("DOMContentLoaded", () => {
             loadGoogleSheetData();
@@ -253,11 +276,12 @@
                     processRawData(results.data);
                     buildChronologicalFilterDropdown();
                     applyFiltersAndRefresh();
+                    updateHistoricalTrendsCharts(); 
                     document.getElementById("loadingOverlay").classList.add("hidden");
                 },
                 error: function(err) {
-                    console.error("Error al procesar la hoja de cálculo: ", err);
-                    alert("Error crítico de sincronización con Google Sheets.");
+                    console.error("Error processing sheet: ", err);
+                    alert("Critical synchronization error with Google Sheets.");
                     document.getElementById("loadingOverlay").classList.add("hidden");
                 }
             });
@@ -281,7 +305,13 @@
                 if (!isNaN(dateObj.getTime())) {
                     let year = dateObj.getFullYear();
                     let monthIndex = dateObj.getMonth();
-                    let periodLabel = `${MONTH_NAMES_ES[monthIndex].toUpperCase()} ${year}`;
+                    
+                    const formatLabel = (mIdx, yr) => {
+                        const abbreviatedMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                        return `${abbreviatedMonths[mIdx]} ${yr}`;
+                    };
+                    
+                    let periodLabel = formatLabel(monthIndex, year);
                     
                     if (!periodSet.has(periodLabel)) {
                         periodSet.add(periodLabel);
@@ -311,16 +341,17 @@
                     }
                 }
 
-                let periodLabel = "Desconocido";
+                let periodLabel = "Unknown";
                 if (!isNaN(dateObj.getTime())) {
-                    periodLabel = `${MONTH_NAMES_ES[dateObj.getMonth()].toUpperCase()} ${dateObj.getFullYear()}`;
+                    const abbreviatedMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    periodLabel = `${abbreviatedMonths[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
                 }
 
                 let vehicle = (row["Tipo de vehículo"] || "").trim();
                 if (vehicle.toLowerCase().includes("moto")) vehicle = "Moto";
-                else if (vehicle.toLowerCase().includes("econ")) vehicle = "Económico";
+                else if (vehicle.toLowerCase().includes("econ")) vehicle = "Economy";
                 else if (vehicle.toLowerCase().includes("comf")) vehicle = "Comfort";
-                else vehicle = "Económico";
+                else vehicle = "Economy"; 
 
                 const parseNum = (val) => {
                     if (!val) return 0;
@@ -339,15 +370,23 @@
                 let isYangoBad = yango >= 100;
                 let isNegBad = negociado >= 100;
 
-                let rawTime = (row["¿En qué momento sucedió la renegociación?"] || row["Renegotiation point"] || "").trim();
-                let rTime = "N/A";
-                if (rawTime.toLowerCase().includes("finalizar")) rTime = "Al finalizar el viaje";
-                if (rawTime.toLowerCase().includes("iniciar")) rTime = "Antes de iniciar el viaje";
+                let rawPointData = (row["Renegotiation point"] || row["¿En qué momento sucedió la renegociación?"] || "").trim().toLowerCase();
 
-                let rawChannel = (row["¿Por qué canal sucedió la renegociación?"] || "").trim();
+                let rTime = "N/A";
+                if (rawPointData.includes("finalizar") || rawPointData.includes("end")) {
+                    rTime = "At the end of the trip";
+                } else if (rawPointData.includes("iniciar") || rawPointData.includes("start") || rawPointData.includes("before")) {
+                    rTime = "Before starting the trip";
+                } else {
+                    rTime = "Before starting the trip"; 
+                }
+
                 let rChannel = "N/A";
-                if (rawChannel.toLowerCase().includes("person") || rawChannel.toLowerCase().includes("persona")) rChannel = "In person";
-                if (rawChannel.toLowerCase().includes("call") || rawChannel.toLowerCase().includes("llamada")) rChannel = "Normal Call";
+                if (rawPointData.includes("in person") || rawPointData.includes("persona")) {
+                    rChannel = "In person";
+                } else if (rawPointData.includes("call") || rawPointData.includes("chat") || rawPointData.includes("llamada")) {
+                    rChannel = "Normal Call"; 
+                }
 
                 return {
                     id: index + 1,
@@ -368,8 +407,7 @@
 
         function buildChronologicalFilterDropdown() {
             const select = document.getElementById("filterMonth");
-            select.innerHTML = '<option value="ALL">Todos los períodos</option>';
-            
+            select.innerHTML = '<option value="ALL">All Periods</option>';
             chronologicalPeriods.forEach(p => {
                 const opt = document.createElement("option");
                 opt.value = p.label;
@@ -424,14 +462,14 @@
         }
 
         function renderCrossMatrixTable(data) {
-            const categories = ["Moto", "Económico", "Comfort"];
+            const categories = ["Moto", "Economy", "Comfort"];
             const tbody = document.getElementById("tableCrossMatrix");
             tbody.innerHTML = "";
 
             categories.forEach(cat => {
                 const subset = data.filter(r => r.vehicle === cat);
                 if (subset.length === 0) {
-                    tbody.innerHTML += `<tr class="border-b border-slate-100 italic text-slate-400"><td class="px-4 py-3 font-bold text-slate-900">${cat}</td><td colspan="6" class="text-center py-3">Sin muestras registradas</td></tr>`;
+                    tbody.innerHTML += `<tr class="border-b border-slate-100 italic text-slate-400"><td class="px-4 py-3 font-bold text-slate-900">${cat}</td><td colspan="6" class="text-center py-3">No recorded logs</td></tr>`;
                     return;
                 }
 
@@ -466,9 +504,9 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b border-slate-100 font-medium text-slate-700">
                         <td class="px-4 py-3 font-bold text-slate-900">${cat}</td>
-                        <td class="px-4 py-3 text-center">$${avgYummy}</td>
-                        <td class="px-4 py-3 text-center">$${avgRidery}</td>
-                        <td class="px-4 py-3 text-center bg-amber-50/40 text-slate-600">$${avgYangoGlobal}</td>
+                        <td class="px-4 py-3 text-center font-bold" style="color: #c084fc;">$${avgYummy}</td>
+                        <td class="px-4 py-3 text-center font-bold" style="color: #34d399;">$${avgRidery}</td>
+                        <td class="px-4 py-3 text-center bg-amber-50/40 font-bold" style="color: #CD212A;">$${avgYangoGlobal}</td>
                         <td class="px-4 py-3 text-center bg-rose-50/40 font-bold text-slate-900">${displayPreReneg}</td>
                         <td class="px-4 py-3 text-center bg-rose-50/60 font-bold text-slate-900">${displayReneg}</td>
                         <td class="px-4 py-3 text-center text-xs bg-slate-50 font-bold">${badge}</td>
@@ -481,11 +519,6 @@
             const tbody = document.getElementById("masterTableBody");
             tbody.innerHTML = "";
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-slate-400 italic">No hay registros.</td></tr>`;
-                return;
-            }
-
             data.forEach(row => {
                 const isNeg = row.driverNegotiated.toLowerCase() === "si" || row.driverNegotiated.toLowerCase() === "sí";
                 
@@ -494,22 +527,40 @@
                 const ygAmt = row.rawYango || 0;
                 const ngAmt = row.rawNegociated || 0;
 
+                const higherThanYummy = (!row.isYangoBad && !row.isYummyBad && ymAmt > 0 && ygAmt > ymAmt);
+                const higherThanRidery = (!row.isYangoBad && !row.isRideryBad && rdAmt > 0 && ygAmt > rdAmt);
+
                 const yummyDisplay = row.isYummyBad ? `<span class="text-red-500 font-semibold">&ge; 100</span>` : `$${ymAmt.toFixed(2)}`;
                 const rideryDisplay = row.isRideryBad ? `<span class="text-red-500 font-semibold">&ge; 100</span>` : `$${rdAmt.toFixed(2)}`;
                 const yangoDisplay = row.isYangoBad ? `<span class="text-red-500 font-semibold">&ge; 100</span>` : `$${ygAmt.toFixed(2)}`;
                 
-                let negDisplay = "-";
+                let negDisplay = `<span class="text-slate-950 font-bold">$0.00</span>`;
                 let renegClass = "text-slate-400";
+                let higherClass = "text-slate-400";
+                let higherLabel = "No";
                 
+                if (higherThanYummy && higherThanRidery) {
+                    higherClass = "bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold text-[11px]";
+                    higherLabel = "SI";
+                } else if (higherThanRidery) {
+                    higherClass = "bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-bold text-[11px]";
+                    higherLabel = "SI";
+                } else if (higherThanYummy) {
+                    higherClass = "bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold text-[11px]";
+                    higherLabel = "SI";
+                }
+
                 if (isNeg) {
                     renegClass = "bg-rose-50 text-rose-700 px-2 py-0.5 rounded font-bold text-[11px]";
                     if (row.isNegBad) {
-                        negDisplay = `<span class="text-red-500 font-semibold">&ge; 100</span>`;
+                        negDisplay = `<span class="text-slate-950 font-bold">&ge; 100</span>`;
                     } else if (ngAmt > 0) {
-                        negDisplay = `<span class="text-indigo-600 font-bold">$${ngAmt.toFixed(2)}</span>`;
+                        negDisplay = `<span class="text-slate-950 font-bold">$${ngAmt.toFixed(2)}</span>`;
                     } else {
-                        negDisplay = `<span class="text-red-500 font-black">$${ygAmt.toFixed(2)} *</span>`;
+                        negDisplay = `<span class="text-slate-950 font-black">$${ygAmt.toFixed(2)} *</span>`;
                     }
+                } else {
+                    negDisplay = `<span class="text-slate-400 font-normal">-</span>`;
                 }
 
                 tbody.innerHTML += `
@@ -517,18 +568,97 @@
                         <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${row.timestamp} <span class="text-[10px] ml-1 uppercase font-semibold text-slate-400">(${row.period})</span></td>
                         <td class="px-4 py-2.5 font-bold text-slate-900">${row.vehicle}</td>
                         <td class="px-4 py-2.5 truncate max-w-xs font-medium">${row.pointA} &rarr; ${row.pointB}</td>
-                        <td class="px-4 py-2.5 text-center font-bold text-amber-600">${yangoDisplay}</td>
-                        <td class="px-4 py-2.5 text-center">${yummyDisplay}</td>
-                        <td class="px-4 py-2.5 text-center">${rideryDisplay}</td>
-                        <td class="px-4 py-2.5 text-center font-bold">${negDisplay}</td>
-                        <td class="px-4 py-2.5 text-center"><span class="${renegClass}">${isNeg ? 'SÍ' : 'No'}</span></td>
+                        <td class="px-4 py-2.5 text-center font-bold" style="color: #CD212A;">${yangoDisplay}</td>
+                        <td class="px-4 py-2.5 text-center font-bold" style="color: #c084fc;">${yummyDisplay}</td>
+                        <td class="px-4 py-2.5 text-center font-bold" style="color: #34d399;">${rideryDisplay}</td>
+                        <td class="px-4 py-2.5 text-center"><span class="${higherClass}">${higherLabel}</span></td>
+                        <td class="px-4 py-2.5 text-center">${negDisplay}</td>
+                        <td class="px-4 py-2.5 text-center"><span class="${renegClass}">${isNeg ? 'SI' : 'No'}</span></td>
                         <td class="px-4 py-2.5 text-slate-500 text-xs truncate max-w-xs">${isNeg ? `${row.renegTime} (${row.renegChannel})` : 'N/A'}</td>
                     </tr>`;
             });
         }
 
+        function updateHistoricalTrendsCharts() {
+            const targetCategories = ['Comfort', 'Economy', 'Moto', 'Total'];
+            const labels = targetCategories.map(c => c === 'Economy' ? 'Económico' : c);
+            
+            const legendContainer = document.getElementById("sharedHistoricalLegend");
+            legendContainer.innerHTML = "";
+            
+            chronologicalPeriods.forEach((period, idx) => {
+                const color = COLOR_PALETTE_MONTHS[idx % COLOR_PALETTE_MONTHS.length];
+                legendContainer.innerHTML += `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-xs inline-block" style="background-color: ${color};"></span>
+                        <span>${period.label}</span>
+                    </div>`;
+            });
+
+            let rateDatasets = [];
+            let deviationDatasets = [];
+
+            chronologicalPeriods.forEach((period, idx) => {
+                const color = COLOR_PALETTE_MONTHS[idx % COLOR_PALETTE_MONTHS.length];
+                let periodRates = [];
+                let periodDeviations = [];
+
+                targetCategories.forEach(cat => {
+                    const monthSubset = rawDataset.filter(r => r.period === period.label);
+                    const cellSubset = cat === 'Total' ? monthSubset : monthSubset.filter(r => r.vehicle === cat);
+                    
+                    if (cellSubset.length === 0) {
+                        periodRates.push(0);
+                        periodDeviations.push(0);
+                        return;
+                    }
+
+                    const renegSubset = cellSubset.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
+                    const renegCount = renegSubset.length;
+                    const ratePercent = (renegCount / cellSubset.length) * 100;
+                    periodRates.push(parseFloat(ratePercent.toFixed(1)));
+
+                    const validPreValues = renegSubset.filter(r => !r.isYangoBad && r.rawYango > 0).map(r => r.rawYango);
+                    const validPostValues = renegSubset.filter(r => !r.isNegBad && r.rawNegociated > 0).map(r => r.rawNegociated);
+
+                    if (validPreValues.length > 0 && validPostValues.length > 0) {
+                        const avgPre = validPreValues.reduce((a, b) => a + b, 0) / validPreValues.length;
+                        const avgPost = validPostValues.reduce((a, b) => a + b, 0) / validPostValues.length;
+                        const deviationPercent = ((avgPost - avgPre) / avgPre) * 100;
+                        periodDeviations.push(parseFloat(deviationPercent.toFixed(1)));
+                    } else {
+                        periodDeviations.push(0);
+                    }
+                });
+
+                rateDatasets.push({ label: period.label, data: periodRates, backgroundColor: color });
+                deviationDatasets.push({ label: period.label, data: periodDeviations, backgroundColor: color });
+            });
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { callback: (value) => value + '%' } } }
+            };
+
+            if(chartHistRenegRateInstance) chartHistRenegRateInstance.destroy();
+            chartHistRenegRateInstance = new Chart(document.getElementById("chartHistRenegRate").getContext("2d"), {
+                type: 'bar',
+                data: { labels: labels, datasets: rateDatasets },
+                options: chartOptions
+            });
+
+            if(chartHistPriceIncreaseInstance) chartHistPriceIncreaseInstance.destroy();
+            chartHistPriceIncreaseInstance = new Chart(document.getElementById("chartHistPriceIncrease").getContext("2d"), {
+                type: 'bar',
+                data: { labels: labels, datasets: deviationDatasets },
+                options: chartOptions
+            });
+        }
+
         function renderCharts(data) {
-            const categories = ["Comfort", "Económico", "Moto"];
+            const categories = ["Comfort", "Economy", "Moto"];
             
             const metrics = categories.map(cat => {
                 const sub = data.filter(r => r.vehicle === cat);
@@ -542,25 +672,15 @@
                 const validRenegociado = subNeg.filter(r => !r.isNegBad && r.rawNegociated > 0).map(r => r.rawNegociated);
 
                 const getMean = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
-
                 let avgPre = getMean(validPreReneg);
                 let avgPost = getMean(validRenegociado);
-                
-                // Tamaño calculado estrictamente por el incremento neto (Diferencia)
-                let deltaIncremento = avgPost > avgPre ? (avgPost - avgPre) : 0;
-
                 return {
-                    yango: getMean(validYango),
-                    yummy: getMean(validYummy),
-                    ridery: getMean(validRidery),
-                    preReneg: avgPre,
-                    incrementoReneg: deltaIncremento,
-                    avgPostReal: avgPost, 
+                    yango: getMean(validYango), yummy: getMean(validYummy), ridery: getMean(validRidery),
+                    preReneg: avgPre, incrementoReneg: avgPost > avgPre ? (avgPost - avgPre) : 0, avgPostReal: avgPost, 
                     renegRate: sub.length ? (subNeg.length / sub.length) * 100 : 0
                 };
             });
 
-            // 1. COMPARATIVA DE TARIFAS CON CONFIGURACIÓN APILADA MIXTA AJUSTADA
             if (chartTariffInstance) chartTariffInstance.destroy();
             chartTariffInstance = new Chart(document.getElementById("chartTariffComparison").getContext("2d"), {
                 type: 'bar',
@@ -568,107 +688,74 @@
                     labels: categories,
                     datasets: [
                         { label: 'Yummy', data: metrics.map(m => m.yummy.toFixed(2)), backgroundColor: '#c084fc', stack: 'Stack0' },
-                        { label: 'Ridery', data: metrics.map(m => m.ridery.toFixed(2)), backgroundColor: '#60a5fa', stack: 'Stack1' },
-                        { label: 'Yango Promedio Global', data: metrics.map(m => m.yango.toFixed(2)), backgroundColor: '#fbbf24', stack: 'Stack2' },
-                        { label: 'Yango Pre-Renegociación', data: metrics.map(m => m.preReneg.toFixed(2)), backgroundColor: '#991b1b', stack: 'Stack3' },
-                        { label: 'Yango Renegociado (Incremento)', data: metrics.map(m => m.incrementoReneg.toFixed(2)), backgroundColor: '#f87171', stack: 'Stack3' }
+                        { label: 'Ridery', data: metrics.map(m => m.ridery.toFixed(2)), backgroundColor: '#34d399', stack: 'Stack1' },
+                        { label: 'Yango', data: metrics.map(m => m.yango.toFixed(2)), backgroundColor: '#CD212A', stack: 'Stack2' },
+                        { label: 'Yango Pre-Renegotiation', data: metrics.map(m => m.preReneg.toFixed(2)), backgroundColor: '#991b1b', stack: 'Stack3' },
+                        { label: 'Yango Renegotiated (Increment)', data: metrics.map(m => m.incrementoReneg.toFixed(2)), backgroundColor: '#f87171', stack: 'Stack3' }
                     ]
                 },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: false }, 
-                        y: { 
-                            beginAtZero: true,
-                            title: { display: true, text: 'Tarifa en USD ($)' }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let datasetLabel = context.dataset.label || '';
-                                    let index = context.dataIndex;
-                                    let value = context.raw;
-                                    if (datasetLabel.includes("Incremento")) {
-                                        return `${datasetLabel}: +$${value} (Total Final: $${metrics[index].avgPostReal.toFixed(2)})`;
-                                    }
-                                    return `${datasetLabel}: $${value}`;
-                                }
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
             });
 
-            // 2. TORTA GLOBAL
             const totalNeg = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí").length;
             if (chartRenegPieInstance) chartRenegPieInstance.destroy();
             chartRenegPieInstance = new Chart(document.getElementById("chartRenegotiationPie").getContext("2d"), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Sí renegoció', 'No renegoció'],
-                    datasets: [{ data: [totalNeg, data.length - totalNeg], backgroundColor: ['#f43f5e', '#34d399'] }]
+                    labels: ['Renegotiated', 'Did Not Renegotiate'],
+                    datasets: [{ data: [totalNeg, data.length - totalNeg], backgroundColor: ['#CD212A', '#34A853'] }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 3. INCIDENCIA POR VEHÍCULO
             if (chartRenegIncidenceInstance) chartRenegIncidenceInstance.destroy();
             chartRenegIncidenceInstance = new Chart(document.getElementById("chartRenegIncidence").getContext("2d"), {
                 type: 'bar',
                 data: {
                     labels: categories,
-                    datasets: [{ label: '% Incidencia de Ajuste', data: metrics.map(m => m.renegRate.toFixed(1)), backgroundColor: '#f472b6', borderRadius: 6 }]
+                    datasets: [{ label: '% Adjustment Incidence', data: metrics.map(m => m.renegRate.toFixed(1)), backgroundColor: '#f472b6' }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, beginAtZero: true } } }
+                options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // 4. GRÁFICA DE BARRAS APILADAS AL 100%
             const renegDataset = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
-            const momentosLabels = ["Al finalizar el viaje", "Antes de iniciar el viaje", "Grand Total"];
             
-            const calcPercent = (momento, canal, esTotalColumna = false) => {
-                if (esTotalColumna) {
-                    const totalGeneral = renegDataset.length;
-                    if (totalGeneral === 0) return 0;
-                    const count = renegDataset.filter(r => r.renegChannel === canal).length;
-                    return (count / totalGeneral) * 100;
-                } else {
-                    const totalMomento = renegDataset.filter(r => r.renegTime === momento).length;
-                    if (totalMomento === 0) return 0;
-                    const count = renegDataset.filter(r => r.renegTime === momento && r.renegChannel === canal).length;
-                    return (count / totalMomento) * 100;
-                }
+            const higherThanCompPct = (cat) => {
+                const sub = cat === "Total" ? renegDataset : renegDataset.filter(r => r.vehicle === cat);
+                if (sub.length === 0) return 0;
+                const higher = sub.filter(r => r.isHigherThanComp.toLowerCase() === "si" || r.isHigherThanComp.toLowerCase() === "sí").length;
+                return (higher / sub.length) * 100; 
             };
 
-            const datasetInPerson = [calcPercent("Al finalizar el viaje", "In person"), calcPercent("Antes de iniciar el viaje", "In person"), calcPercent("", "In person", true)];
-            const datasetNormalCall = [calcPercent("Al finalizar el viaje", "Normal Call"), calcPercent("Antes de iniciar el viaje", "Normal Call"), calcPercent("", "Normal Call", true)];
-            const datasetGrandTotalBlock = [100 - datasetInPerson[0] - datasetNormalCall[0], 100 - datasetInPerson[1] - datasetNormalCall[1], 100 - datasetInPerson[2] - datasetNormalCall[2]];
+            const economyHigher = higherThanCompPct("Economy");
+            const motoHigher = higherThanCompPct("Moto");
+            const totalHigher = higherThanCompPct("Total");
 
-            if (chartStackedMethodInstance) chartStackedMethodInstance.destroy();
-            chartStackedMethodInstance = new Chart(document.getElementById("chartStackedMethodology").getContext("2d"), {
+            // =========================================================================
+            // 📊 CHART REPARADO: TRADUCCIÓN COMPLETA AL INGLÉS (Labels & Legend)
+            // =========================================================================
+            if (chartRenegHigherThanCompInstance) chartRenegHigherThanCompInstance.destroy();
+            chartRenegHigherThanCompInstance = new Chart(document.getElementById("chartRenegHigherThanComp").getContext("2d"), {
                 type: 'bar',
                 data: {
-                    labels: momentosLabels,
+                    labels: ['Economy', 'Moto', 'Grand Total'],
                     datasets: [
-                        { label: 'In person', data: datasetInPerson.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#4285F4' },
-                        { label: 'Normal Call', data: datasetNormalCall.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#FBBC05' },
-                        { label: 'Grand Total (Control)', data: datasetGrandTotalBlock.map(v => parseFloat(v.toFixed(2))), backgroundColor: '#34A853' }
+                        { label: 'Yes', data: [economyHigher.toFixed(1), motoHigher.toFixed(1), totalHigher.toFixed(1)], backgroundColor: '#e11d48' },
+                        { label: 'No', data: [(100 - economyHigher).toFixed(1), (100 - motoHigher).toFixed(1), (100 - totalHigher).toFixed(1)], backgroundColor: '#16a34a' }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, max: 200, ticks: { callback: function(value) { if(value <= 100) return value + "%"; return ""; } } }
-                    },
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.raw + '%'; } } }
-                    }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        x: { stacked: true }, 
+                        y: { 
+                            stacked: true,
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { callback: (value) => value + '%' }
+                        } 
+                    } 
                 }
             });
         }
