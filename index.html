@@ -28,7 +28,7 @@
                     <i class="fa-solid fa-square-poll-horizontal text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v6.2</span></h1>
+                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v6.3</span></h1>
                     <p class="text-xs text-slate-400">Strategic Performance Tracker</p>
                 </div>
             </div>
@@ -318,6 +318,7 @@
                     chartHistPriceIncreaseInstance.update();
                 }
                 if(chartTimingChannelInstance) chartTimingChannelInstance.update();
+                if(chartRenegIncidenceInstance) chartRenegIncidenceInstance.update();
             });
 
             document.getElementById("toggleFareLabels").addEventListener("change", (e) => {
@@ -770,7 +771,6 @@
             });
         }
 
-        // SECCIÓN CLAVE CON EL FORMATEADOR MONETARIO OPTIMIZADO PARA LAS BARRAS APILADAS
         function renderCharts(data) {
             const categories = ["Comfort", "Economy", "Moto"];
             
@@ -824,11 +824,9 @@
                                 let pIndex = context.dataIndex;
                                 let currentMetric = metrics[pIndex];
 
-                                // Oculta de raíz la etiqueta inferior de la base para evitar duplicidades
                                 if (dIndex === 3) {
                                     return ''; 
                                 } 
-                                // Renderiza la suma superior agregando dinámicamente el signo "$" a ambos elementos
                                 else if (dIndex === 4) {
                                     if (currentMetric.incrementoReneg > 0) {
                                         return '$' + currentMetric.preReneg.toFixed(2) + ' + $' + currentMetric.incrementoReneg.toFixed(2);
@@ -837,7 +835,6 @@
                                     }
                                     return '';
                                 }
-                                // Formatea el resto de barras independientes como montos de dinero tradicionales
                                 return '$' + parseFloat(value).toFixed(2);
                             }
                         } 
@@ -847,7 +844,7 @@
                             beginAtZero: true,
                             ticks: {
                                 callback: function(val) {
-                                    return '$' + val; // Integra el símbolo "$" en la escala del eje Y lateral
+                                    return '$' + val; 
                                 }
                             }
                         } 
@@ -886,38 +883,75 @@
                 }
             });
 
+            // =========================================================
+            // GRÁFICA CORREGIDA: INCIDENCE RATE CON SÍMBOLO % EN EL EJE Y
+            // =========================================================
             if (chartRenegIncidenceInstance) chartRenegIncidenceInstance.destroy();
             chartRenegIncidenceInstance = new Chart(document.getElementById("chartRenegIncidence").getContext("2d"), {
                 type: 'bar',
                 data: {
                     labels: categories,
-                    datasets: [{ label: '% Adjustment Incidence', data: metrics.map(m => m.renegRate.toFixed(1)), backgroundColor: '#f472b6' }]
+                    datasets: [{ 
+                        label: '% Adjustment Incidence', 
+                        data: metrics.map(m => m.renegRate.toFixed(1)), 
+                        backgroundColor: '#f472b6' 
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { datalabels: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        datalabels: { 
+                            display: function() { return globalLabelsEnabled; },
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 2,
+                            color: '#475569',
+                            font: { weight: 'bold', size: 11 },
+                            formatter: (value) => parseFloat(value) > 0 ? value + '%' : ''
+                        } 
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grace: '15%',
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%'; // <--- AGREGAMOS SÍMBOLO % AL EJE
+                                }
+                            }
+                        }
+                    }
+                }
             });
 
-            const renegDataset = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí").length;
             const contextDataset = data.filter(r => r.driverNegotiated.toLowerCase() === "si" || r.driverNegotiated.toLowerCase() === "sí");
             
             const higherThanCompPct = (cat) => {
+                if (cat !== "Total" && data.length > 0 && !data.some(r => r.vehicle === cat)) {
+                    return { yes: 0, no: 0, hasData: false };
+                }
+
                 const sub = cat === "Total" ? contextDataset : contextDataset.filter(r => r.vehicle === cat);
-                if (sub.length === 0) return 0;
+                if (sub.length === 0) return { yes: 0, no: 100, hasData: false }; 
                 
                 const higher = sub.filter(r => {
                     const ymAmt = r.rawYummy || 0;
                     const rdAmt = r.rawRidery || 0;
-                    const ygAmt = r.rawYango || 0;
-                    const higherThanYummy = (!r.isYangoBad && !r.isYummyBad && ymAmt > 0 && ygAmt > ymAmt);
-                    const higherThanRidery = (!r.isYangoBad && !r.isRideryBad && rdAmt > 0 && ygAmt > rdAmt);
+                    const finalNegAmt = r.rawNegociated || 0;
+
+                    const higherThanYummy = (!r.isNegBad && !r.isYummyBad && ymAmt > 0 && finalNegAmt > ymAmt);
+                    const higherThanRidery = (!r.isNegBad && !r.isRideryBad && rdAmt > 0 && finalNegAmt > rdAmt);
                     return (higherThanYummy || higherThanRidery);
                 }).length;
                 
-                return (higher / sub.length) * 100; 
+                const yesPct = (higher / sub.length) * 100;
+                return { yes: yesPct, no: 100 - yesPct, hasData: true };
             };
 
-            const economyHigher = higherThanCompPct("Economy");
-            const motoHigher = higherThanCompPct("Moto");
-            const totalHigher = higherThanCompPct("Total");
+            const economyMetrics = higherThanCompPct("Economy");
+            const motoMetrics = higherThanCompPct("Moto");
+            const totalMetrics = higherThanCompPct("Total");
 
             if (chartRenegHigherThanCompInstance) chartRenegHigherThanCompInstance.destroy();
             chartRenegHigherThanCompInstance = new Chart(document.getElementById("chartRenegHigherThanComp").getContext("2d"), {
@@ -925,14 +959,35 @@
                 data: {
                     labels: ['Economy', 'Moto', 'Grand Total'],
                     datasets: [
-                        { label: 'Yes', data: [economyHigher.toFixed(1), motoHigher.toFixed(1), totalHigher.toFixed(1)], backgroundColor: '#e11d48' },
-                        { label: 'No', data: [(100 - economyHigher).toFixed(1), (100 - motoHigher).toFixed(1), (100 - totalHigher).toFixed(1)], backgroundColor: '#16a34a' }
+                        { 
+                            label: 'Yes', 
+                            data: [economyMetrics.yes.toFixed(1), motoMetrics.yes.toFixed(1), totalMetrics.yes.toFixed(1)], 
+                            backgroundColor: '#e11d48' 
+                        },
+                        { 
+                            label: 'No', 
+                            data: [economyMetrics.no.toFixed(1), motoMetrics.no.toFixed(1), totalMetrics.no.toFixed(1)], 
+                            backgroundColor: '#16a34a' 
+                        }
                     ]
                 },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    plugins: { datalabels: { display: false } },
+                    plugins: { 
+                        datalabels: { 
+                            display: function(context) {
+                                let idx = context.dataIndex;
+                                if (idx === 0 && !economyMetrics.hasData) return false;
+                                if (idx === 1 && !motoMetrics.hasData) return false;
+                                if (idx === 2 && !totalMetrics.hasData) return false;
+                                return true;
+                            },
+                            color: '#ffffff',
+                            font: { weight: 'bold', size: 10 },
+                            formatter: (value) => parseFloat(value) > 0 ? value + '%' : ''
+                        } 
+                    },
                     scales: { 
                         x: { stacked: true }, 
                         y: { 
