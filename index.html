@@ -28,7 +28,7 @@
                     <i class="fa-solid fa-square-poll-horizontal text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v6.3</span></h1>
+                    <h1 class="text-xl font-bold tracking-tight">Yango Competitive Intelligence (CI) <span class="text-xs bg-slate-800 text-amber-400 font-normal px-2 py-0.5 rounded ml-2 border border-slate-700">v6.4</span></h1>
                     <p class="text-xs text-slate-400">Strategic Performance Tracker</p>
                 </div>
             </div>
@@ -432,21 +432,24 @@
                 let isYangoBad = yango >= 100;
                 let isNegBad = negociado >= 100;
 
-                let rawPointData = (row["Renegotiation point"] || row["¿En qué momento sucedió la renegociación?"] || "").trim().toLowerCase();
-
+                // ==========================================
+                // NUEVA LÓGICA DE EXTRACCIÓN (REVISIÓN DE TABLAS)
+                // ==========================================
+                let timingRaw = (row["¿En qué momento sucedió la renegociación?"] || "").trim().toLowerCase();
                 let rTime = "N/A";
-                if (rawPointData.includes("finalizar") || rawPointData.includes("end")) {
-                    rTime = "At the end of the trip";
-                } else if (rawPointData.includes("iniciar") || rawPointData.includes("start") || rawPointData.includes("before")) {
+                if (timingRaw.includes("antes de iniciar") || timingRaw.includes("before")) {
                     rTime = "Before starting the trip";
-                } else {
-                    rTime = "Before starting the trip"; 
+                } else if (timingRaw.includes("durante el viaje") || timingRaw.includes("during")) {
+                    rTime = "During the trip";
+                } else if (timingRaw.includes("finalizar el viaje") || timingRaw.includes("end")) {
+                    rTime = "At the end of the trip";
                 }
 
+                let channelRaw = (row["Renegotiation point"] || "").trim().toLowerCase();
                 let rChannel = "N/A";
-                if (rawPointData.includes("in person") || rawPointData.includes("persona")) {
+                if (channelRaw.includes("in person") || channelRaw.includes("persona")) {
                     rChannel = "In person";
-                } else if (rawPointData.includes("call") || rawPointData.includes("chat") || rawPointData.includes("llamada")) {
+                } else if (channelRaw.includes("call") || channelRaw.includes("llamada")) {
                     rChannel = "Normal Call"; 
                 }
 
@@ -660,6 +663,12 @@
                     negDisplay = `<span class="text-slate-400 font-normal">-</span>`;
                 }
 
+                // Despliegue corregido con estructura clara del evento
+                let textEvent = 'N/A';
+                if(isNeg && row.renegTime !== 'N/A') {
+                    textEvent = `${row.renegTime} (${row.renegChannel})`;
+                }
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b border-slate-100 text-slate-700">
                         <td class="px-4 py-2.5 text-slate-500 whitespace-nowrap">${row.timestamp} <span class="text-[10px] ml-1 uppercase font-semibold text-slate-400">(${row.period})</span></td>
@@ -671,7 +680,7 @@
                         <td class="px-4 py-2.5 text-center"><span class="${higherClass}">${higherLabel}</span></td>
                         <td class="px-4 py-2.5 text-center bg-slate-50/70"><span class="${renegClass}">${isNeg ? 'Yes' : 'No'}</span></td>
                         <td class="px-4 py-2.5 text-center">${negDisplay}</td>
-                        <td class="px-4 py-2.5 text-slate-500 text-xs truncate max-w-xs">${isNeg ? `${row.renegTime} (${row.renegChannel})` : 'N/A'}</td>
+                        <td class="px-4 py-2.5 text-slate-700 font-medium text-xs truncate max-w-xs">${textEvent}</td>
                     </tr>`;
             });
         }
@@ -883,9 +892,6 @@
                 }
             });
 
-            // =========================================================
-            // GRÁFICA CORREGIDA: INCIDENCE RATE CON SÍMBOLO % EN EL EJE Y
-            // =========================================================
             if (chartRenegIncidenceInstance) chartRenegIncidenceInstance.destroy();
             chartRenegIncidenceInstance = new Chart(document.getElementById("chartRenegIncidence").getContext("2d"), {
                 type: 'bar',
@@ -917,7 +923,7 @@
                             grace: '15%',
                             ticks: {
                                 callback: function(value) {
-                                    return value + '%'; // <--- AGREGAMOS SÍMBOLO % AL EJE
+                                    return value + '%';
                                 }
                             }
                         }
@@ -1000,7 +1006,11 @@
                 }
             });
 
+            // ========================================================
+            // GRÁFICA CONTROLADA: ASIGNACIÓN DE 3 ESTADOS (BEFORE, DURING, END)
+            // ========================================================
             const beforeSubset = contextDataset.filter(r => r.renegTime === "Before starting the trip");
+            const duringSubset = contextDataset.filter(r => r.renegTime === "During the trip");
             const endSubset = contextDataset.filter(r => r.renegTime === "At the end of the trip");
 
             const getChannelDistribution = (subset) => {
@@ -1009,7 +1019,7 @@
                 
                 const inPersonCount = subset.filter(r => r.renegChannel === "In person").length;
                 const normalCallCount = subset.filter(r => r.renegChannel === "Normal Call").length;
-                const naCount = subset.filter(r => r.renegChannel === "N/A" || !r.renegChannel || r.renegChannel === "Unknown").length;
+                const naCount = subset.filter(r => r.renegChannel === "N/A" || !r.renegChannel).length;
 
                 return {
                     inPerson: ((inPersonCount / total) * 100),
@@ -1019,17 +1029,31 @@
             };
 
             const distBefore = getChannelDistribution(beforeSubset);
+            const distDuring = getChannelDistribution(duringSubset);
             const distEnd = getChannelDistribution(endSubset);
 
             if (chartTimingChannelInstance) chartTimingChannelInstance.destroy();
             chartTimingChannelInstance = new Chart(document.getElementById("chartTimingChannelSplit").getContext("2d"), {
                 type: 'bar',
                 data: {
-                    labels: ['Before starting the trip', 'At the end of the trip'],
+                    // Ejes X con nombres limpios y bonitos
+                    labels: ['Before starting', 'During', 'At the end'],
                     datasets: [
-                        { label: 'In person', data: [distBefore.inPerson.toFixed(1), distEnd.inPerson.toFixed(1)], backgroundColor: '#3b82f6' },
-                        { label: 'Normal Call', data: [distBefore.normalCall.toFixed(1), distEnd.normalCall.toFixed(1)], backgroundColor: '#f59e0b' },
-                        { label: 'N/A / Unknown', data: [distBefore.na.toFixed(1), distEnd.na.toFixed(1)], backgroundColor: '#cbd5e1' }
+                        { 
+                            label: 'In person', 
+                            data: [distBefore.inPerson.toFixed(1), distDuring.inPerson.toFixed(1), distEnd.inPerson.toFixed(1)], 
+                            backgroundColor: '#3b82f6' 
+                        },
+                        { 
+                            label: 'Normal Call', 
+                            data: [distBefore.normalCall.toFixed(1), distDuring.normalCall.toFixed(1), distEnd.normalCall.toFixed(1)], 
+                            backgroundColor: '#f59e0b' 
+                        },
+                        { 
+                            label: 'N/A / Unknown', 
+                            data: [distBefore.na.toFixed(1), distDuring.na.toFixed(1), distEnd.na.toFixed(1)], 
+                            backgroundColor: '#cbd5e1' 
+                        }
                     ]
                 },
                 options: {
@@ -1041,7 +1065,7 @@
                             display: function() { return globalLabelsEnabled; },
                             color: '#ffffff',
                             font: { weight: 'bold', size: 11 },
-                            formatter: (value) => parseFloat(value) > 5 ? value + '%' : ''
+                            formatter: (value) => parseFloat(value) > 4 ? value + '%' : ''
                         }
                     },
                     scales: {
